@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+{% extends "basic_app/base.html" %}
+{% block block_body %}
+<h1>Lista zaplanowanych obiadów</h1>
+{% if dinns %}
+<ul>
+  {% for d in dinns %}
+  <li><h4>{{d}}<a  href="{% url 'basic_app:delete' d.id %}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;usuń</a></h4></li>
+  {% endfor %}
+</ul>
+
+
+
+{% endif %}
+
+
+{% endblock %}
