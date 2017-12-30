@@ -5,7 +5,7 @@
 {% if dinns %}
 <ul>
   {% for d in dinns %}
-  <li>{{d}}{#<a href="{% url 'basic_app:delete' number=d.id %}">Usuń</a>#}</li>
+  <li>{{d}}  <span>&nbsp;&nbsp;&nbsp;&nbsp;</span><a href="{% url 'basic_app:addrecipe' number=d.id %}">Przepis</a></li>
   {% endfor %}
 </ul>
 

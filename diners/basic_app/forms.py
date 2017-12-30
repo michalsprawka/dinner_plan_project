@@ -10,6 +10,11 @@ import html5.forms.widgets as html5_widgets
 
 class formAddDinner(forms.Form):
     name = forms.CharField(widget=forms.TextInput(attrs={'class':'form-control','placeholder':'Dodaj obiadek'}))
+    recipe = forms.CharField(widget=forms.Textarea(attrs={'placeholder':'Tu dodaj przepis'}),required=False)
+
+class formAddRecipe(forms.Form):
+
+    recipe = forms.CharField(widget=forms.Textarea(attrs={'placeholder':'Tu dodaj przepis'}))
 """
 class formAddDinnerDate(forms.ModelForm):
     class Meta:
@@ -18,16 +23,23 @@ class formAddDinnerDate(forms.ModelForm):
 """
 
 class formDaysChoice(forms.Form):
-    days = forms.MultipleChoiceField(choices=((1,"pon"),(2,"wto"),(3,"sro")),widget=forms.CheckboxSelectMultiple())
+    def __init__(self,user_days,*args,**kwargs):
+        super(formDaysChoice,self).__init__(*args,**kwargs)
+        self.fields['days'].initial=user_days
+    days = forms.MultipleChoiceField(choices=((1,"poniedziałek")
+                                                            ,(2,"wtorek"),(3,"środa"),
+                                                            (4,"czwartek"),(5,"piątek"),
+                                                            (6,"sobota"),(7,"niedziela")),
+                                                            widget=forms.CheckboxSelectMultiple())
 
 class formAddDinnerDate(forms.Form):
 
     def __init__(self, foo_choices,date_tab, *args, **kwargs):
         super(formAddDinnerDate, self).__init__(*args, **kwargs)
         #self.attrs={'id':'formfield'}
-        self.fields['din'].choices = foo_choices
+        self.fields['din'].widget.choices = foo_choices
         self.fields['date'].choices = date_tab
-    din = forms.ChoiceField(label="Obiad", widget=forms.Select(attrs={'class':'form-control','id':'dinn'}))
+    din = forms.CharField(label="Obiad", widget=forms.Select(attrs={'class':'form-control','id':'dinn'}))
     date = forms.ChoiceField(label="Data",widget=forms.Select(attrs={'class':'form-control','id':'dat'}))
 
     def clean_din(self):

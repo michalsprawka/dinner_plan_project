@@ -1,5 +1,6 @@
 from django.shortcuts import render
-from basic_app.models import Dinners, DinnersDate
+from basic_app.models import Dinners, DinnersDate,UserSetting
+from django.contrib.auth.models import User
 from . import forms
 from datetime import date,timedelta
 
@@ -22,6 +23,8 @@ def addDinnersShow(request):
     #messages.error(request, 'Three credits remain in your account.')
     dinners = Dinners.objects.all()
     if request.user.is_authenticated:
+
+
         print(request.user.pk)
         print(request.user.username)
         print(request.user.email)
@@ -29,15 +32,60 @@ def addDinnersShow(request):
         print("nie ma usera")
     return render(request,'basic_app/addDinnersShow.html',{'dinns':dinners})
 
+def DinnersDetail(request, number):
+    din = Dinners.objects.get(pk=number)
+
+    return render(request,'basic_app/dinnersDetail.html',{'din':din})
+def DinnersAddRecipe(request,number):
+    obj = Dinners.objects.get(pk=number)
+    auth=obj.dinner_author
+    form = forms.formAddRecipe(initial = {'recipe':obj.recipe})
+
+    if request.method == 'POST':
+
+        form = forms.formAddRecipe(request.POST)
+        if form.is_valid():
+            RECIPE= form.cleaned_data['recipe']
+            #obj = Dinners.objects.get(pk=number)
+            obj.recipe = RECIPE
+            obj.save()
+    return render(request,'basic_app/addDinnerRecipe.html',{'form':form, 'auth':auth})
+
+
+@login_required
 def DinnerDateShow(request):
-    dinners = DinnersDate.objects.filter(date__gte=date.today()).order_by('date')
+    dinners = DinnersDate.objects.filter(date__gte=date.today(), dinner_user=request.user).order_by('date')
     #print(request.session['test'])
     return render(request,'basic_app/dinnersDateShow.html',{'dinns':dinners})
 def DinnerChoice(request):
-    form = forms.formDaysChoice()
+    if request.user.is_authenticated:
+        obj = UserSetting.objects.get(user=request.user)
+        form = forms.formDaysChoice(list(obj.setDays))
+    else:
+        form = forms.formDaysChoice([])
     if request.method == "POST":
-        form = forms.formDaysChoice(request.POST)
+
+        form = forms.formDaysChoice([],request.POST)
         if form.is_valid():
+            if request.user.is_authenticated:
+                d = form.cleaned_data['days']
+                if UserSetting.objects.get(user=request.user):
+                    obj = UserSetting.objects.get(user=request.user)
+                    obj.setDays="".join(d)
+                    obj.save()
+                else:
+                    obj=UserSetting()
+                    obj.user=request.user
+                    obj.setDays="".join(d)
+                    obj.save()
+
+
+
+                print(request.user.pk)
+                print(request.user.username)
+                print(request.user.email)
+            else:
+                print("nie ma usera")
             d= form.cleaned_data['days']
             print(d)
             return HttpResponseRedirect(reverse("index"))
@@ -61,7 +109,7 @@ def validate_dinner(request):
     #        is_taken=True
 
     data = {
-        'is_taken': DinnersDate.objects.filter(date=date).exists()
+        'is_taken': DinnersDate.objects.filter(date=date, dinner_user=request.user).exists()
     }
     return JsonResponse(data)
 
@@ -75,13 +123,16 @@ def addDinner(request):
         form = forms.formAddDinner(request.POST)
         if form.is_valid():
             NAME = form.cleaned_data['name']
+            RECIPE = form.cleaned_data['recipe']
             print(NAME)
             obj = Dinners()
+            obj.dinner_author=request.user
+            obj.recipe=RECIPE
             obj.dinners=NAME
             obj.save()
 
     return render(request,'basic_app/addDinner.html',{'form':form})
-
+@login_required
 def addDinnerDate(request):
     DINS= Dinners.objects.all()
     #CH =[(i+1,DINS[i].dinners) for i in range(len(DINS))]
@@ -89,6 +140,20 @@ def addDinnerDate(request):
     CH +=[(i.pk,i.dinners) for i in DINS]
     day = date.today()
     DATE_TAB=[(0,'---------------'),]
+    day_numbers = list(UserSetting.objects.get(user=request.user).setDays)
+    print(day_numbers)
+    if day_numbers:
+        cnt=0
+        while cnt<20:
+        #print("inside")
+            if (str(day.weekday()+1)) in day_numbers:
+
+                DATE_TAB.append((day,str(day)))
+                cnt+=1
+            day += timedelta(1)
+
+
+    """
     monday=False
     for i in range(5):
         if day.weekday() == 0:
@@ -115,7 +180,7 @@ def addDinnerDate(request):
             monday=True
 
         i+=1
-
+        """
     #delta = timedelta(1)
     #DATE_TAB = [(today+(timedelta(i)),str(today+(timedelta(i)))) for i in range(20)]
 
@@ -142,6 +207,7 @@ def addDinnerDate(request):
             #    print("nie ma submit 1")
             #print("Submit :",request.POST.get('submit1'))
             obj = DinnersDate()
+            obj.dinner_user = request.user
             obj.din=Dinners.objects.get(pk=DIN)
             obj.date = DATE
             obj.save()
@@ -184,6 +250,7 @@ def register(request):
 
             # Update with Hashed password
             user.save()
+            UserSetting.objects.create(user=user)
 
             # Now we deal with the extra info!
 

@@ -5,7 +5,8 @@
 {% if dinns %}
 <ul>
   {% for d in dinns %}
-  <li><h4>{{d}}<a  href="{% url 'basic_app:delete' d.id %}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;usuń</a></h4></li>
+  <li><h4>{{d}} Dodany przez: {{ d.dinner_user}}<a  href="{% url 'basic_app:delete' d.id %}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;usuń</a></h4></li>
+
   {% endfor %}
 </ul>
 
